@@ -17,3 +17,9 @@
   *** WHERE ***
 =SOMASE(A2:A10; B2:B10; "X")
 =FILTRAR(A2:C10, B2:B10 > 50)
+
+*** MANIPULAÇÃO STRINGS ***
+=DIREITA(texto, [núm_caract])
+=ESQUERDA(texto, [núm_caract])
+=EXT.TEXTO(A1, 1, COMPRIMENTO(A1) - 3) --RETIRAR VALORES À DIREITA DA STRING
+
