@@ -1,0 +1,86 @@
+Sub ComprouJuntoFinal()
+
+Application.DisplayAlerts = False
+Application.ScreenUpdating = False
+'Application.Calculation = xlCalculationManual
+    
+Dim conexao As New ADODB.Connection
+Dim retorno As New ADODB.Recordset
+Dim SQL As String
+
+Sheets("Comprou_Junto").Range("A10:C1000").ClearContents
+
+dataInicialA = Format(Range("A2").Value, "yyyymmdd")
+dataFinalA = Format(Range("A3").Value, "yyyymmdd")
+dataInicialAN = Format(Range("C2").Value, "yyyymmdd")
+dataFinalAN = Format(Range("C3").Value, "yyyymmdd")
+
+N1 = CStr(Range("A4").Value)
+N2 = CStr(Range("A5").Value)
+N11 = CStr(Range("C4").Value)
+N22 = CStr(Range("C5").Value)
+
+conexao.CommandTimeout = 10000
+
+conexao.ConnectionString = "Provider=(provedor).1;Password= (senha) ;Persist Security Info=True;User ID=consulta ;Data Source=(DATABASE);Use Procedure for Prepare=1;Auto Translate=True;Packet Size=4096;Use Encryption for Data=False;Tag with column collation when possible=False;Initial Catalog=DADOSADV"
+conexao.Open
+
+
+SQL = "BEGIN "
+SQL = SQL & "DECLARE @N1 VARCHAR(50), @N2 VARCHAR(50), @N11 VARCHAR(50), @N22 VARCHAR(50); "
+SQL = SQL & "SET @N1 = '" & N1 & "'; "
+SQL = SQL & "SET @N2 = '" & N2 & "';"
+SQL = SQL & "SET @N11 = '" & N11 & "'; "
+SQL = SQL & "SET @N22 = '" & N12 & "'; "
+
+SQL = SQL & "WITH TempCTEAgora AS ("
+SQL = SQL & "    SELECT DISTINCT RTRIM(TAB1.CLI_LOJA) + RTRIM(TAB1.CLI_VENDA) AS CLIENTE "
+SQL = SQL & "    FROM ( "
+SQL = SQL & "        SELECT Z.CLI_LOJA, Z.CLI_VENDA, SB.B1_XFXPREC "
+SQL = SQL & "        FROM ZVIEW_CUPONS_VENDA Z "
+SQL = SQL & "        LEFT JOIN SB1010 SB ON RTRIM(Z.SKU) = RTRIM(SB.B1_COD) "
+SQL = SQL & "        WHERE Z.DATA_EMISSAO BETWEEN '" & dataInicialA & "' AND '" & dataFinalA & "' "
+SQL = SQL & "        AND Z.CLI_VENDA NOT IN ('000022', '007946') "
+SQL = SQL & "        AND Z.TIPO = 'V' "
+SQL = SQL & "        AND Z.CLI_VENDA <> '100000' "
+SQL = SQL & "        AND Z.CLI_VENDA <> '200000' "
+SQL = SQL & "        AND Z.NIVEL1 = @N1 "
+SQL = SQL & "        AND (@N2 = '' OR Z.NIVEL2 = @N2) "
+SQL = SQL & "        AND SB.D_E_L_E_T_ NOT LIKE '*' "
+SQL = SQL & "        AND (SB.B1_XFXPREC = 'P0' OR SB.B1_XFXPREC = 'P1') "
+SQL = SQL & "    ) TAB1 "
+SQL = SQL & ") "
+
+SQL = SQL & "SELECT RTRIM(TAB1.CLI_LOJA) + RTRIM(TAB1.CLI_VENDA) AS VENDEDOR, TAB1.B1_XFXPREC "
+SQL = SQL & "FROM ( "
+SQL = SQL & "    SELECT Z.CLI_LOJA, Z.CLI_VENDA, SB.B1_XFXPREC "
+SQL = SQL & "    FROM ZVIEW_CUPONS_VENDA Z "
+SQL = SQL & "    LEFT JOIN SB1010 SB ON RTRIM(Z.SKU) = RTRIM(SB.B1_COD) "
+SQL = SQL & "    WHERE Z.DATA_EMISSAO BETWEEN '" & dataInicialAN & "' AND '" & dataFinalAN & "' "
+SQL = SQL & "    AND Z.CLI_VENDA NOT IN ('000022', '007946') "
+SQL = SQL & "    AND Z.TIPO = 'V' "
+SQL = SQL & "    AND Z.CLI_VENDA <> '100000' "
+SQL = SQL & "    AND Z.CLI_VENDA <> '200000' "
+SQL = SQL & "    AND SB.D_E_L_E_T_ NOT LIKE '*' "
+SQL = SQL & "    AND Z.NIVEL1 = @N11 "
+SQL = SQL & "    AND (@N22 = '' OR Z.NIVEL2 = @N22) "
+SQL = SQL & ") TAB1 "
+
+SQL = SQL & "WHERE RTRIM(TAB1.CLI_LOJA) + RTRIM(TAB1.CLI_VENDA) IN ( "
+SQL = SQL & "    SELECT TCA.CLIENTE FROM TempCTEAgora TCA "
+SQL = SQL & ") "
+
+SQL = SQL & "END; "
+
+
+    
+    
+retorno.Open SQL, conexao, adOpenKeyset, adLockOptimistic
+Sheets("Comprou_Junto").Range("A10").CopyFromRecordset retorno
+
+retorno.Close
+conexao.Close
+
+Sheets("Comprou_Junto").Range("C1") = Now()
+End Sub
+
