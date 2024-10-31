@@ -1,0 +1,54 @@
+Sub teste_query()
+
+Application.DisplayAlerts = False
+Application.ScreenUpdating = False
+'Application.Calculation = xlCalculationManual
+    
+Dim conexao As New ADODB.Connection
+Dim retorno As New ADODB.Recordset
+Dim SQL As String
+
+Sheets("Folha1").Range("A10:E1000000").ClearContents
+
+dataInicial = Format(Range("C2").Value, "yyyymmdd")
+dataFinal = Format(Range("C3").Value, "yyyymmdd")
+N1 = CStr(Range("B3").Value)
+N2 = CStr(Range("B4").Value)
+N3 = CStr(Range("B5").Value)
+
+conexao.CommandTimeout = 10000
+
+conexao.ConnectionString = "Provider=(provider);Password= (senha) ;Persist Security Info=True;User ID=consulta ;Data Source=(Inserir Data S);Use Procedure for Prepare=1;Auto Translate=True;Packet Size=4096;Use Encryption for Data=False;Tag with column collation when possible=False;Initial Catalog=(Banco de dados)"
+conexao.Open
+
+SQL = "SELECT Filial, Nome_Fil, Tipo, CLI_VENDA ,SUM(Valor_Total_Item) "
+SQL = SQL & "FROM ZVIEW_CUPONS_VENDA "
+SQL = SQL & "WHERE RTRIM(NIVEL1) =  '" & N1 & "' "
+
+If N2 <> "" Then
+    SQL = SQL & "AND RTRIM(NIVEL2) = '" & N2 & "' "
+    
+If N3 <> "" Then
+    SQL = SQL & "AND RTRIM(NIVEL3) = '" & N3 & "' "
+    
+End If
+End If
+
+
+SQL = SQL & "AND DATA_EMISSAO BETWEEN '" & dataInicial & "' AND '" & dataFinal & "' "
+SQL = SQL & "AND CLI_VENDA NOT IN ('000022', '007946') "
+SQL = SQL & "AND FILIAL NOT IN ('011005', '011004') "
+SQL = SQL & "AND CLI_VENDA <> '100000' AND CLI_VENDA <> '200000' "
+SQL = SQL & "GROUP BY Filial, Nome_Fil, Tipo, CLI_VENDA "
+SQL = SQL & "ORDER BY 2 DESC; "
+
+    
+    
+retorno.Open SQL, conexao, adOpenKeyset, adLockOptimistic
+Sheets("Folha1").Range("A10").CopyFromRecordset retorno
+
+retorno.Close
+conexao.Close
+
+Sheets("Folha1").Range("A1") = Now()
+End Sub
